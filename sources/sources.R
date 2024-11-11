@@ -1,5 +1,3 @@
-not_all_na <- function(x) any(!is.na(x))
-
 
 Fetch_land_optimizer <- function(deck_list_path, card_DB = df_base) {
   df_land <- card_DB %>%
@@ -347,8 +345,11 @@ search_reamining <- function(
 # Organising deck box
 
 organising_deckbox <- function(deck_list_base_path) {
+  
   deck_to_compare_list <- list.files(deck_list_base_path, full.names = TRUE)
 
+
+  
   Deck_list <- lapply(
     deck_to_compare_list, function(x) {
       res <- deck_parser(x)
@@ -438,36 +439,36 @@ organising_deckbox <- function(deck_list_base_path) {
     arrange(deck, sep_side) %>%
     group_split(deck)
 
-  unlink("outpout/Deck_box.txt")
-  write(paste0("Common cards : ", "\n"), file = "outpout/Deck_box.txt", append = TRUE)
-  invisible(
-    lapply(common_list_of_cards_by_deck, function(x) {
-      # print(unique(x$deck_using_cards))
-      write(paste0(unique(x$deck_using_cards)),
-        file = "outpout/Deck_box.txt", append = TRUE
-      )
-      write_tsv(x %>% select(-deck_using_cards),
-        file = "outpout/Deck_box.txt", append = TRUE
-      )
-      write("\n", file = "outpout/Deck_box.txt", append = TRUE)
-      #
-      # x %>%  print(n = 100)
-    })
-  )
-
-  write(paste0("Separate Deck : ", "\n"), file = "outpout/Deck_box.txt", append = TRUE)
-  invisible(lapply(Not_common_list_of_cards, function(x) {
-    write(paste0(unique(x$deck)), file = "outpout/Deck_box.txt", append = TRUE)
-    write(paste0("Maindeck :"), file = "outpout/Deck_box.txt", append = TRUE)
-    write_tsv(x %>% filter(!sep_side) %>% select(-deck, -sep_side),
-      file = "outpout/Deck_box.txt", append = TRUE
-    )
-    write(paste0("Sideboard :"), file = "outpout/Deck_box.txt", append = TRUE)
-    write_tsv(x %>% filter(sep_side) %>% select(-deck, -sep_side),
-      file = "outpout/Deck_box.txt", append = TRUE
-    )
-    write("\n", file = "outpout/Deck_box.txt", append = TRUE)
-  }))
+  # unlink("outpout/Deck_box.txt")
+  # write(paste0("Common cards : ", "\n"), file = "outpout/Deck_box.txt", append = TRUE)
+  # invisible(
+  #   lapply(common_list_of_cards_by_deck, function(x) {
+  #     # print(unique(x$deck_using_cards))
+  #     write(paste0(unique(x$deck_using_cards)),
+  #       file = "outpout/Deck_box.txt", append = TRUE
+  #     )
+  #     write_tsv(x %>% select(-deck_using_cards),
+  #       file = "outpout/Deck_box.txt", append = TRUE
+  #     )
+  #     write("\n", file = "outpout/Deck_box.txt", append = TRUE)
+  #     #
+  #     # x %>%  print(n = 100)
+  #   })
+  # )
+  # 
+  # write(paste0("Separate Deck : ", "\n"), file = "outpout/Deck_box.txt", append = TRUE)
+  # invisible(lapply(Not_common_list_of_cards, function(x) {
+  #   write(paste0(unique(x$deck)), file = "outpout/Deck_box.txt", append = TRUE)
+  #   write(paste0("Maindeck :"), file = "outpout/Deck_box.txt", append = TRUE)
+  #   write_tsv(x %>% filter(!sep_side) %>% select(-deck, -sep_side),
+  #     file = "outpout/Deck_box.txt", append = TRUE
+  #   )
+  #   write(paste0("Sideboard :"), file = "outpout/Deck_box.txt", append = TRUE)
+  #   write_tsv(x %>% filter(sep_side) %>% select(-deck, -sep_side),
+  #     file = "outpout/Deck_box.txt", append = TRUE
+  #   )
+  #   write("\n", file = "outpout/Deck_box.txt", append = TRUE)
+  # }))
 
   return(
     list(
@@ -541,7 +542,7 @@ Pitch_cards_evaluation <- function(deck_list_path, card_DB) {
 
   identify_pitch_cards <- inner_join(pitch_cards, test_deck_list, by = c("cards" = "nom"))
   if (nrow(identify_pitch_cards) == 0) {
-    print("no pitch_cards")
+    # print("no pitch_cards")
 
     list_of_result_table <- NULL
   } else {
@@ -912,3 +913,147 @@ Wrenn_fun_analysis <- function(deck_list_path,
 }
 
 ################################################################################
+
+
+################################################################################
+############## function that print result for main side or all  ################
+print_deck_list_result <- function(
+    res_encours_fun,
+    iteration_print ,
+    Df_with_cardname
+){
+  # Inserts Month titles
+  # Section contents
+  pander::pandoc.header(iteration_print, level = 1)
+  pander::pandoc.p("")
+  
+  if (nrow(res_encours_fun[[iteration_print]]$missing ) > 0)  {
+    pander::pandoc.header("Missing", level = 2)
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    flextable::flextable_to_rmd(
+      flextable::flextable(
+        res_encours_fun[[iteration_print]]$missing %>%
+          left_join(
+            join_with_scryfall(
+              Df_with_cardname =   .,
+              cardname_col = "nom",
+              scry_fall_df = Df_with_cardname
+            ),
+            by = join_by("nom" == CardName)
+          ) %>%
+          left_join(
+            Df_with_cardname %>%
+              select(id, scryfall_uri),
+            by = join_by(
+              scry_fall_id == id
+            )
+          ) %>%
+          select(-scry_fall_id)
+      ) %>%
+        flextable::compose(j = "nom",
+                           value = flextable::as_paragraph(
+                             flextable::hyperlink_text(x = nom, url = scryfall_uri)
+                           )
+        ) %>%
+        flextable::delete_columns( j = "scryfall_uri") %>%
+        flextable::align(align = "center", part = "all")
+    )
+  }
+  
+  if (TRUE) {
+    
+    pander::pandoc.header("Fetchland optimizeer", level = 2)
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    
+    if(
+      is_tibble(
+        res_encours_fun[[iteration_print]]$fetch
+      )
+    ){
+      
+      pander::pandoc.p("Optimum found table with all optimum fetch combination")
+      flextable::flextable_to_rmd(
+        flextable::flextable(
+          res_encours_fun[[iteration_print]]$fetch
+        )
+      )
+      pander::pandoc.p("")
+      pander::pandoc.p("")
+    }else if(
+      length(
+        res_encours_fun[[iteration_print]]$fetch
+      ) == 2
+    ){
+      pander::pandoc.p("No optimum found : first table maximize number of fetchable land the second maximize the least fetchable land")    
+      pander::pandoc.p("::: {.panel-tabset .nav-pills}")
+      pander::pandoc.header("Maximize number of fetchable", level = 3)
+      
+      flextable::flextable_to_rmd(
+        flextable::flextable(
+          res_encours_fun[[iteration_print]]$fetch$max_number_of_fetchable
+        )
+      )
+      pander::pandoc.p("")
+      pander::pandoc.p("")
+      pander::pandoc.header("Maximize number of least fetchable land", level = 3)
+      flextable::flextable_to_rmd(
+        flextable::flextable(
+          res_encours_fun[[iteration_print]]$fetch$max_the_min_number_of_fetchable
+        )
+      )
+      pander::pandoc.p("")
+      pander::pandoc.p("")
+      pander::pandoc.p(":::")
+    }
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    
+  }
+  if (!is.null(res_encours_fun[[iteration_print]]$pitch_cards)){
+    pander::pandoc.header("Pitchable analysis", level = 2)
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    res_temp <- lapply(
+      seq_along(res_encours_fun[[iteration_print]]$pitch_cards) , 
+      function(x){
+        pander::pandoc.header(names(res_encours_fun[[iteration_print]]$pitch_cards)[x], level = 2)
+        pander::pandoc.p("")
+        pander::pandoc.p("")
+        flextable::flextable_to_rmd(
+          flextable::flextable(
+            res_encours_fun[[iteration_print]]$pitch_cards[[x]]
+          )
+        )
+        pander::pandoc.p("")
+        pander::pandoc.p("")
+      }
+    )
+    
+  }
+  if(!is.null(res_encours_fun[[iteration_print]]$wrenn)){
+    pander::pandoc.header("Wrenn and six probabilities", level = 2)
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    flextable::flextable_to_rmd(
+      flextable::flextable(
+        res_encours_fun[[iteration_print]]$wrenn$table
+      )
+    )
+    pander::pandoc.p("")
+    pander::pandoc.p("")
+    print(res_encours_fun[[iteration_print]]$wrenn$plot)
+    
+  }
+  
+  
+}
+
+
+
+
+
+
+
+

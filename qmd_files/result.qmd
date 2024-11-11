@@ -1,24 +1,20 @@
 ---
-title: "Untitled"
-author: "F Bettega"
-date: "`r Sys.Date()`"
-output: html_document
+title: "Results"
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 
-source("sources/sources.R")
-source("sources/MTG_function_base_FB/global_mtg_sources.R")
+source("../sources/sources.R")
+source("../sources/MTG_function_base_FB/global_mtg_sources.R")
 
 exclude_cards_type <- c("art_series","token"  , "emblem"  )
 
-scry_fall_db_cards <- read.csv("data/mtg_data/DBcarte_oracle.csv") %>% 
+scry_fall_db_cards <- read.csv("../data/mtg_data/DBcarte_oracle.csv") %>% 
   filter(layout %notin% exclude_cards_type)
-  
 
 collection <- read_csv(
-  list.files("data/mtg_data/", pattern = "^archidekt-collection", full.names = TRUE),
+  list.files("../data/mtg_data/", pattern = "^archidekt-collection", full.names = TRUE),
   show_col_types = FALSE
 ) %>%
   group_by(Name) %>%
@@ -30,7 +26,7 @@ collection <- read_csv(
 #     Name = tolower(Name)
 #          )
 
-base_path <- "data/list/test/"
+base_path <- "../data/list/test/"
 list_en_cours <- list.files(base_path, full.names = TRUE)
 ```
 
@@ -39,16 +35,18 @@ list_en_cours <- list.files(base_path, full.names = TRUE)
 result_common_cards <- organising_deckbox(
   deck_list_base_path = base_path
 )
+
 ```
 
 
 ```{r}
 # path <- "data/list/test/jund_creativity_bologne_first.txt"
+ # path <- "data/list/test/Deck - Dimir Reanimator.txt"
 # path <- list_en_cours[1]
 result_for_each_list <- lapply(
   list_en_cours,
   function(path) {
-    print(path)
+    # print(path)
     missing_cards <- find_missing_cards(
       path_to_list = path,
       scryfall_df = scry_fall_db_cards,
@@ -87,18 +85,20 @@ result_for_each_list <- lapply(
 
 
 
-```{r}
-itreration <- "Deck - Temur Breach.txt"
 
-printing_encours <- result_for_each_list[[itreration]]
+```{r, results='asis'}
 
-printing_encours$missing
+result_print <- lapply(names(result_for_each_list), function(iteration){
+  print_deck_list_result(
+    res_encours_fun = result_for_each_list,
+    iteration_print = iteration,
+    Df_with_cardname = scry_fall_db_cards
+)
+  
+}
+)
 
 ```
-
-
-
-
 
 
 
