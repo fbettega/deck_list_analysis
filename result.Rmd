@@ -1,0 +1,104 @@
+---
+title: "Untitled"
+author: "F Bettega"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+source("sources.R")
+source("data/mtg_data/sources/global_mtg_sources.R")
+
+exclude_cards_type <- c("art_series","token"  , "emblem"  )
+
+scry_fall_db_cards <- read.csv("data/mtg_data/DBcarte_oracle.csv") %>% 
+  filter(layout %notin% exclude_cards_type)
+  
+
+collection <- read_csv(
+  list.files("data/mtg_data/", pattern = "^archidekt-collection", full.names = TRUE),
+  show_col_types = FALSE
+) %>%
+  group_by(Name) %>%
+  summarise(
+    Quantity = sum(Quantity)
+    ) 
+# %>%
+#   mutate(
+#     Name = tolower(Name)
+#          )
+
+base_path <- "data/list/test/"
+list_en_cours <- list.files(base_path, full.names = TRUE)
+```
+
+
+```{r}
+result_common_cards <- organising_deckbox(
+  deck_list_base_path = base_path
+)
+```
+
+
+```{r}
+# path <- "data/list/test/jund_creativity_bologne_first.txt"
+# path <- list_en_cours[1]
+result_for_each_list <- lapply(
+  list_en_cours,
+  function(path) {
+    print(path)
+    missing_cards <- find_missing_cards(
+      path_to_list = path,
+      scryfall_df = scry_fall_db_cards,
+      collection_df = collection
+    )
+
+    result_fetch_optimiser <- Fetch_land_optimizer(
+      deck_list_path = path,
+      card_DB = scry_fall_db_cards
+    )
+
+    # here add debug result with list of pitch and pitchable
+    result_pitch_cards <- Pitch_cards_evaluation(
+      deck_list_path = path,
+      card_DB = scry_fall_db_cards
+    )
+
+    result_wrenn <- Wrenn_fun_analysis(
+      deck_list_path = path,
+      card_DB = scry_fall_db_cards
+    )
+    return(
+      list(
+        missing = missing_cards,
+        fetch = result_fetch_optimiser,
+        pitch_cards = result_pitch_cards,
+        wrenn = result_wrenn
+      )
+    )
+  }
+) %>% 
+  name_list_of_model_with_string(str_remove(list_en_cours,base_path))
+
+
+```
+
+
+
+```{r}
+itreration <- "Deck - Temur Breach.txt"
+
+printing_encours <- result_for_each_list[[itreration]]
+
+printing_encours$missing
+
+```
+
+
+
+
+
+
+
