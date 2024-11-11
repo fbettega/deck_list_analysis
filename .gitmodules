@@ -1,0 +1,3 @@
+[submodule "sources/MTG_function_base_FB"]
+	path = sources/MTG_function_base_FB
+	url = git@github.com:fbettega/MTG_function_base_FB.git
